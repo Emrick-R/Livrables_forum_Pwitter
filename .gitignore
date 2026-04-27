@@ -1,0 +1,10 @@
+# Les dépendances node
+node_modules/
+
+# Les variables d'environnement pour mettre nos mdp, apikeys, et database credentials
+.env
+.env.local
+.env.*
+
+# Dossier WebStorm
+.idea
