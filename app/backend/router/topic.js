@@ -14,34 +14,34 @@ const topic = require('../controller/topic')
 const {verifierJWT, verifierJWTOptionnel} = require('../middleware/auth')
 
 // On branche GET /api/topics → retourne la liste de tous les topics
-router.get('/api/topics', topic.getTopics)
+router.get('/topics', topic.getTopics)
 
 // On branche GET /api/topic/:id → retourne le détail d'un topic
-router.get('/api/topic/:id', verifierJWTOptionnel, topic.getTopicById)
+router.get('/topic/:id', verifierJWTOptionnel, topic.getTopicById)
 
 // On branche GET /api/topic/:id/tags → retourne les tags d'un topic spécifique
-router.get('/api/topic/:id/tags', topic.getTopicTags)
+router.get('/topic/:id/tags', topic.getTopicTags)
 
 // On branche GET /api/topic/:id/message → retourne la liste des messages d'un topic spécifique
-router.get('/api/topic/:id/message', verifierJWTOptionnel, topic.getTopicMessages)
+router.get('/topic/:id/message', verifierJWTOptionnel, topic.getTopicMessages)
 
 // On branche POST /api/topic → créer un topic
-router.post('/api/topic', verifierJWT, topic.postTopic)
+router.post('/topic', verifierJWT, topic.postTopic)
 
 // On branche POST /api/topic/:id/like → liker ou disliker un topic
-router.post('/api/topic/:id/like', verifierJWT, topic.postTopicLikeDislike)
+router.post('/topic/:id/like', verifierJWT, topic.postTopicLikeDislike)
 
 // On branche DELETE /api/topic/:id/like → annuler son like/dislike
-router.delete('/api/topic/:id/like', verifierJWT, topic.deleteTopicLikeDislike)
+router.delete('/topic/:id/like', verifierJWT, topic.deleteTopicLikeDislike)
 
 // On branche PUT /api/topic/:id → modifier titre, corps, tags d'un topic (propriétaire ou admin)
-router.put('/api/topic/:id', verifierJWT, topic.putTopicById)
+router.put('/topic/:id', verifierJWT, topic.putTopicById)
 
 // On branche PATCH /api/topic/:id/status → modifier uniquement le statut d'un topic (propriétaire ou admin)
-router.patch('/api/topic/:id/status',verifierJWT , topic.patchTopicStatus)
+router.patch('/topic/:id/status',verifierJWT , topic.patchTopicStatus)
 
 // On branche DELETE /api/topic/:id → supprimer un topic
-router.delete('/api/topic/:id', verifierJWT, topic.deleteTopicById)
+router.delete('/topic/:id', verifierJWT, topic.deleteTopicById)
 
 // On exporte le router avec toutes ses routes
 // app.js l'importe via require et le branche sur /api via app.use('/api', utilisateurRouter)

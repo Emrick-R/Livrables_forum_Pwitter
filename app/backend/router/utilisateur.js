@@ -17,19 +17,19 @@ const {verifierJWT} = require('../middleware/auth')
 // On passe la référence de la fonction — Express l'appellera au bon moment
 // utilisateur.inscrireClient   | référence — s'exécute quand la route est appelée
 // utilisateur.inscrireClient() | résultat  — s'exécuterait au démarrage du serveur.
-router.post('/inscription', verifierJWT, utilisateur.inscrireClient)
+router.post('/inscription', utilisateur.inscrireClient)
 
 // On branche POST /api/connexion → vérifie les credentials et retourne un token JWT
-router.post('/connexion', verifierJWT, utilisateur.connecterClient)
+router.post('/connexion', utilisateur.connecterClient)
 
 // On branche GET /api/utilisateur/topics → retourne les topics de l'user connecté selon le token JWT
 router.get('/utilisateur/topics', verifierJWT, utilisateur.getMesTopics)
 
 // On branche GET /api/utilisateur/:id/ → retourne un utilisateur par son ID
-router.get('/api/utilisateur/:id/', utilisateur.getUtilisateurById)
+router.get('/utilisateur/:id', utilisateur.getUtilisateurById)
 
 // On branche GET /api/utilisateur/:id/topics → retourne les topics d'un autre utilisateur
-router.get('/api/utilisateur/:id/topics', utilisateur.getUtilisateurTopics)
+router.get('/utilisateur/:id/topics', utilisateur.getUtilisateurTopics)
 
 
 // On exporte le router avec toutes ses routes

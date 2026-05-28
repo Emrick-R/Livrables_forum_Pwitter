@@ -3,6 +3,9 @@
  * On définit les middlewares, les routes HTML et les routes API.
  * On lance le serveur sur le port défini.
  */
+// On charge les variables d'environnement du fichier .env
+// Sans ça, process.env.CLEJWT serait undefined et l'authentification serait cassée
+require('dotenv').config()
 
 // On importe Express et on crée l'application
 const express = require('express')
@@ -37,7 +40,8 @@ const limiteurAPI = rateLimit({
 
 // ===== MIDDLEWARES =====
 // On applique le limiteur sur les routes de la connexion et de l'inscription
-// Exemple: app.use('/api/connexion', limiteurAPI)
+app.use('/api/connexion', limiteurAPI)
+app.use('/api/inscription', limiteurAPI)
 
 // On autorise toutes les origines — à restreindre en production
 app.use(cors({ origin: '*' }))

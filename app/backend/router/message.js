@@ -8,26 +8,26 @@
 const express = require('express')
 const router = express.Router()
 
-// express.Router() — crée un mini Express dédié uniquement aux routes utilisateur
+// express.Router() — crée un mini Express dédié uniquement aux routes message
 // Permet de séparer les routes dans des fichiers distincts plutôt que tout mettre dans app.js
 const topic = require('../controller/message')
 const {verifierJWT} = require('../middleware/auth')
 
 // On branche POST /api/message → créer un message
-router.post('/api/message', verifierJWT, topic.postMessage)
+router.post('/message', verifierJWT, topic.postMessage)
 
 // On branche POST /api/message/:id/like → liker ou disliker un message
-router.post('/api/message/:id/like', verifierJWT, topic.postLike)
+router.post('/message/:id/like', verifierJWT, topic.postLike)
 
 // On branche DELETE /api/message/:id/like → annuler son like/dislike
-router.delete('/api/message/:id/like', verifierJWT, topic.deleteLike)
+router.delete('/message/:id/like', verifierJWT, topic.deleteLike)
 
 // On branche PUT /api/message/:id → modifier le corps (propriétaire ou admin)
-router.put('/api/message/:id', verifierJWT, topic.putMessageById)
+router.put('/message/:id', verifierJWT, topic.putMessageById)
 
 // On branche DELETE /api/message/:id → supprimer un message
-router.delete('/api/message/:id', verifierJWT, topic.deleteMessageById)
+router.delete('/message/:id', verifierJWT, topic.deleteMessageById)
 
 // On exporte le router avec toutes ses routes
-// app.js l'importe via require et le branche sur /api via app.use('/api', utilisateurRouter)
+// app.js l'importe via require et le branche sur /api via app.use('/api', messageRouter)
 module.exports = router
