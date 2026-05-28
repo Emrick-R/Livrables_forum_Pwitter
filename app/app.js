@@ -72,6 +72,11 @@ app.use('/api', topicRouter)
 const messageRouter = require('./backend/router/message')
 app.use('/api', messageRouter)
 
+// On importe et branche le router des tags sur /api
+// Toutes les routes de tagRouter seront préfixées par /api
+const tagRouter = require('./backend/router/tag')
+app.use('/api', tagRouter)
+
 // On importe et branche le router des admins sur /api
 // Toutes les routes d'adminRouter' seront préfixées par /api
 const adminRouter = require('./backend/router/admin')
