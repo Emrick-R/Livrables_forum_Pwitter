@@ -11,15 +11,16 @@ const router = express.Router()
 // express.Router() — crée un mini Express dédié uniquement aux routes utilisateur
 // Permet de séparer les routes dans des fichiers distincts plutôt que tout mettre dans app.js
 const topic = require('../controller/tag')
+const {verifierJWT, isAdmin} = require('../middleware/auth')
 
 // On branche GET /api/tags → retourne la liste tous les tags
 router.get('/api/tags', topic.getTags)
 
 // On branche POST /api/tags → créer un tag
-router.post('/api/tags', topic.postTag)
+router.post('/api/tags', verifierJWT, topic.postTag)
 
 // On branche DELETE /api/tags/:id → supprimer un tag (admin uniquement)
-router.delete('/api/tags/:id', topic.deleteTagById)
+router.delete('/api/tags/:id', isAdmin, verifierJWT, topic.deleteTagById)
 
 // On exporte le router avec toutes ses routes
 // app.js l'importe via require et le branche sur /api via app.use('/api', utilisateurRouter)

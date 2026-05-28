@@ -37,7 +37,7 @@ exports.getTopics = async (req, res) => {
                 FROM topics t
                          JOIN users u ON t.id_Users = u.id_Users
                          LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
-                         LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
+                         LEFT JOIN Tags tag ON c.id_Tags = tag.id_Tags
                 WHERE t.status != 'archivé'
                 GROUP BY t.id_Topics
                 ORDER BY t.created_at DESC
@@ -233,21 +233,25 @@ exports.getTopicTags = async (req, res) => {
     }
 }
 
-// ===== GET /api/topic/:id/tags =====
-// Récupère tous les tags associés à un topic spécifique
-// Accessible publiquement — pas besoin de JWT
-exports.getTopicTags = async (req, res) => {
+// ===== GET /api/topic/:id/messages =====
+// Récupère tous les messages d'un topic spécifique
+// Accessible publiquement pour les topics ouverts
+// Nécessite d'être authentifié pour les topics fermés
+exports.getTopicMessages = async (req, res) => {
 
-    // On récupère l'id passé dans l'URL (/api/topic/1/tags → req.params.id = 1)
+    // On récupère l'id passé dans l'URL (/api/topic/1/messages → req.params.id = 1)
     const idTopic = req.params.id
 
+    // On récupère l'utilisateur connecté si présent — peut être null si non connecté
+    const utilisateurConnecte = req.user || null
+
     try {
-        // On vérifie d'abord que le topic existe
+        // On vérifie d'abord que le topic existe et on récupère son statut
         // Exemple de retour si trouvé :
-        // topic = { id_Topics: 1 }
+        // topic = { id_Topics: 1, status: 'ouvert', id_Users: 2 }
         const [[topic]] = await db.query(
             `
-                SELECT id_Topics
+                SELECT id_Topics, status, id_Users
                 FROM topics
                 WHERE id_Topics = ?
             `,
@@ -256,41 +260,72 @@ exports.getTopicTags = async (req, res) => {
 
         // Si le topic n'existe pas on renvoie une erreur 404
         if (!topic) {
-            return res.status(404).json({message: 'Topic introuvable'})
+            return res.status(404).json({ message: 'Topic introuvable' })
         }
 
-        // On récupère tous les tags associés à ce topic
-        // JOIN Classifie pour faire le lien entre le topic et ses tags
-        // JOIN Tags pour récupérer le nom et l'id de chaque tag
+        // Fermé → accessible uniquement par les utilisateurs authentifiés
+        if (topic.status === 'fermé' && !utilisateurConnecte) {
+            return res.status(401).json({ message: 'Vous devez être connecté pour consulter ce topic' })
+        }
+
+        // Archivé → accessible uniquement par le créateur ou un admin
+        const estCreateur = utilisateurConnecte && utilisateurConnecte.id === topic.id_Users
+        const estAdmin    = utilisateurConnecte && utilisateurConnecte.is_admin
+
+        if (topic.status === 'archivé' && !estCreateur && !estAdmin) {
+            return res.status(403).json({ message: 'Accès interdit' })
+        }
+
+        // On récupère tous les messages du topic avec le username de l'auteur
+        // et le score de popularité (nombre de likes - nombre de dislikes)
+        // LEFT JOIN Likes pour compter les votes sur chaque message
+        // SUM(CASE ...) pour calculer le score : +1 par like, -1 par dislike
+        // GROUP BY pour regrouper les lignes par message
         // Exemple de retour :
-        // tags = [
-        //     { id_Tags: 1, name: 'Film' },
-        //     { id_Tags: 4, name: 'Meme' }
+        // messages = [
+        //     { id_Messages: 1, body: 'Super film !', created_at: '2026-01-02T10:00:00.000Z', username: 'user1', id_Users: 3, score: 1 },
+        //     { id_Messages: 2, body: 'Pas convaincu', created_at: '2026-01-02T11:00:00.000Z', username: 'user2', id_Users: 4, score: -1 },
+        //     { id_Messages: 3, body: 'Vraiment nul', created_at: '2026-01-02T12:00:00.000Z', username: 'admin', id_Users: 2, score: 0 }
         // ]
-        // Si aucun tag : tags = []
-        const [tags] = await db.query(
+        // Si aucun message : messages = []
+        const [messages] = await db.query(
             `
-                SELECT tg.id_Tags, tg.name
-                FROM Tags tg
-                         JOIN Classifie c ON tg.id_Tags = c.id_Tags
-                WHERE c.id_Topics = ?
+                SELECT m.id_Messages, m.body, m.created_at,
+                       u.username, u.id_Users,
+                       SUM(CASE
+                           WHEN l.type = 'like'    THEN 1
+                           WHEN l.type = 'dislike' THEN -1
+                           ELSE 0
+                       END) AS score
+                FROM messages m
+                JOIN users u ON m.id_Users = u.id_Users
+                LEFT JOIN Likes l ON m.id_Messages = l.id_Messages
+                WHERE m.id_Topics = ?
+                GROUP BY m.id_Messages
+                ORDER BY m.created_at DESC
             `,
             [idTopic]
         )
 
-        // On renvoie les tags trouvés
+        // On renvoie les messages trouvés
         // Exemple de réponse JSON :
         // {
-        //     "tags": [
-        //         { "id_Tags": 1, "name": "Film" },
-        //         { "id_Tags": 4, "name": "Meme" }
+        //     "messages": [
+        //         {
+        //             "id_Messages": 1,
+        //             "body": "Super film !",
+        //             "created_at": "2026-01-02T10:00:00.000Z",
+        //             "username": "user1",
+        //             "id_Users": 3,
+        //             "score": 1
+        //         }
         //     ]
         // }
-        res.status(200).json({tags})
+        res.status(200).json({ messages })
 
     } catch (erreur) {
         console.error(erreur)
-        res.status(500).json({message: 'Erreur serveur'})
+        res.status(500).json({ message: 'Erreur serveur' })
     }
 }
 

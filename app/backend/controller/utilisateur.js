@@ -13,6 +13,7 @@ const jwt = require('jsonwebtoken')
 
 // ===== POST /api/inscription =====
 // Inscription
+// Nécessite d'être authentifié — req.user est alimenté par le middleware verifierJWT
 exports.inscrireClient = async (req, res) => {
 
     // On récupère les données envoyées par le formulaire d'inscription
@@ -67,6 +68,7 @@ exports.inscrireClient = async (req, res) => {
 
 // ===== POST /api/connexion =====
 // Connexion
+// Nécessite d'être authentifié — req.user est alimenté par le middleware verifierJWT
 exports.connecterClient = async (req, res) => {
 
     // On récupère les données envoyées par le formulaire de connexion
@@ -79,7 +81,11 @@ exports.connecterClient = async (req, res) => {
         // Cela permet d'ignorer le deuxième élément renvoyé par db.query (les métadonnées techniques).
         // Retourne : resultats = [ { id_Users: 2, username: 'user1', email: '...' } ]
         const [resultats] = await db.query(
-            'SELECT * FROM Users WHERE email = ?', [mail]
+            `
+            SELECT * FROM Users
+            WHERE email = ?
+            `,
+            [mail]
         )
 
         // Si on ne trouve personne, on renvoie une erreur générique
