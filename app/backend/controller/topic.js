@@ -7,7 +7,6 @@
 // On importe la connexion à la base de données
 const db = require('../database/connexiondb.js')
 // On importe jsonwebtoken pour créer et signer les jetons d'authentification
-const jwt = require('jsonwebtoken')
 
 // ===== GET /api/topics =====
 // Récupère tous les topics visibles
