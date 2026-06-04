@@ -1,13 +1,10 @@
-/* =========================================
-   VARIABLES DE COULEURS ET THÈMES
-   ========================================= */
+
 :root {
     --vert:    #72E484;
     --bleu:    #60C8F0;
     --violet:  #D478E8;
     --gradient: linear-gradient(135deg, #72E484, #60C8F0, #D478E8);
 
-    /* Mode clair (défaut) */
     --bg:          #F5F5FA;
     --bg-card:     #FFFFFF;
     --bg-navbar:   #FFFFFF;
@@ -31,9 +28,7 @@
     --ombre:       0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-/* =========================================
-   RESET ET BASE
-   ========================================= */
+
 * {
     margin: 0;
     padding: 0;
@@ -57,9 +52,7 @@ button {
     font-family: inherit;
 }
 
-/* =========================================
-   NAVBAR
-   ========================================= */
+
 .navbar {
     position: sticky;
     top: 0;
@@ -144,9 +137,7 @@ button {
     margin-left: auto;
 }
 
-/* =========================================
-   BOUTONS RÉUTILISABLES
-   ========================================= */
+
 .btn-gradient {
     padding: 8px 18px;
     border-radius: 22px;
@@ -215,9 +206,7 @@ button {
     background: var(--bg-hover);
 }
 
-/* =========================================
-   LAYOUT PRINCIPAL
-   ========================================= */
+
 .container {
     max-width: 1180px;
     margin: 24px auto;
@@ -227,9 +216,6 @@ button {
     align-items: flex-start;
 }
 
-/* =========================================
-   SIDEBAR (tags)
-   ========================================= */
 .sidebar {
     width: 230px;
     flex-shrink: 0;
@@ -280,9 +266,7 @@ button {
     font-weight: 600;
 }
 
-/* =========================================
-   ZONE TOPICS
-   ========================================= */
+
 .topics-zone {
     flex: 1;
     min-width: 0;
@@ -323,9 +307,7 @@ button {
     border-color: transparent;
 }
 
-/* =========================================
-   CARTE TOPIC
-   ========================================= */
+
 .topic-card {
     background: var(--bg-card);
     border: 1px solid var(--bordure);
@@ -345,7 +327,6 @@ button {
     box-shadow: 0 4px 14px rgba(96, 200, 240, 0.15);
 }
 
-/* Votes style Reddit */
 .topic-votes {
     display: flex;
     flex-direction: column;
@@ -383,7 +364,6 @@ button {
     color: var(--texte);
 }
 
-/* Contenu du topic */
 .topic-body {
     flex: 1;
     min-width: 0;
@@ -435,9 +415,6 @@ button {
 .statut-ouvert  { background: rgba(114, 228, 132, 0.14); color: var(--vert); }
 .statut-ferme   { background: rgba(232, 114, 114, 0.14); color: #E87272; }
 
-/* =========================================
-   PAGINATION
-   ========================================= */
 .pagination {
     display: flex;
     align-items: center;
@@ -475,9 +452,6 @@ button {
     outline: none;
 }
 
-/* =========================================
-   MESSAGES VIDE / ERREUR
-   ========================================= */
 .message-vide {
     text-align: center;
     padding: 50px 20px;
@@ -485,9 +459,6 @@ button {
     font-size: 0.92rem;
 }
 
-/* =========================================
-   FORMULAIRES (login, register, create-topic)
-   ========================================= */
 .form-page {
     min-height: calc(100vh - 62px);
     display: flex;
@@ -597,9 +568,6 @@ button {
     font-size: 1rem;
 }
 
-/* =========================================
-   ALERTES
-   ========================================= */
 .alerte {
     padding: 10px 16px;
     border-radius: 10px;
@@ -612,9 +580,6 @@ button {
 .alerte.succes  { background: rgba(114, 228, 132, 0.15); color: var(--vert); border: 1px solid rgba(114, 228, 132, 0.3); }
 .alerte.erreur  { background: rgba(232, 114, 114, 0.15); color: #E87272; border: 1px solid rgba(232, 114, 114, 0.3); }
 
-/* =========================================
-   PAGE TOPIC - EN-TÊTE
-   ========================================= */
 .topic-detail-card {
     background: var(--bg-card);
     border: 1px solid var(--bordure);
@@ -655,9 +620,6 @@ button {
     flex-wrap: wrap;
 }
 
-/* =========================================
-   MESSAGES
-   ========================================= */
 .messages-entete {
     display: flex;
     justify-content: space-between;
@@ -699,7 +661,6 @@ button {
     flex-wrap: wrap;
 }
 
-/* Avatar rond avec initiale */
 .avatar {
     width: 32px;
     height: 32px;
@@ -736,7 +697,6 @@ button {
     margin-top: 10px;
 }
 
-/* Zone d'édition inline d'un message */
 .edit-form {
     margin-top: 10px;
     display: none;
@@ -771,9 +731,6 @@ button {
     margin-top: 8px;
 }
 
-/* =========================================
-   FORMULAIRE DE RÉPONSE (composer)
-   ========================================= */
 .composer {
     background: var(--bg-card);
     border: 1px solid var(--bordure);
@@ -831,9 +788,6 @@ button {
     font-weight: 600;
 }
 
-/* =========================================
-   DASHBOARD ADMIN
-   ========================================= */
 .admin-layout {
     max-width: 1100px;
     margin: 24px auto;
@@ -916,7 +870,6 @@ button {
     align-items: center;
 }
 
-/* Tableau admin */
 .admin-table-wrapper {
     background: var(--bg-card);
     border: 1px solid var(--bordure);
@@ -968,7 +921,6 @@ button {
     outline: none;
 }
 
-/* Badge utilisateur banni */
 .badge-banni {
     padding: 2px 9px;
     border-radius: 10px;
@@ -993,18 +945,12 @@ button {
     flex-wrap: wrap;
 }
 
-/* =========================================
-   PAGE MODIFIER TOPIC
-   ========================================= */
 .edit-topic-page {
     max-width: 700px;
     margin: 32px auto;
     padding: 0 16px;
 }
 
-/* =========================================
-   RESPONSIVE (basique)
-   ========================================= */
 @media (max-width: 860px) {
     .sidebar { display: none; }
 }
