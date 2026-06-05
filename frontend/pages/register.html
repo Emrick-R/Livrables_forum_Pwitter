@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pwitter - Inscription</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+
+    <nav class="navbar">
+        <a href="../index.html" class="navbar-logo">
+            <img src="../assets/Colombe en vol sur fond dégradé.png" alt="Logo Pwitter" class="logo-img">
+            <span class="logo-texte">Pwitter</span>
+        </a>
+        <div class="navbar-actions">
+            <button id="btn-theme" onclick="toggleTheme()" title="Changer le thème">🌙</button>
+        </div>
+    </nav>
+
+
+    <div class="form-page">
+        <div class="form-card">
+            <h1>Inscription</h1>
+            <p class="sous-titre">Rejoins la communauté Pwitter !</p>
+
+            <div class="alerte erreur" id="alerte-erreur"></div>
+            <div class="alerte succes" id="alerte-succes"></div>
+
+            <form id="form-register" onsubmit="sInscrire(event)">
+
+                <div class="form-group">
+                    <label for="pseudo">Pseudo</label>
+                    <input
+                        type="text"
+                        id="pseudo"
+                        placeholder="Uniquement lettres et chiffres"
+                        maxlength="30"
+                        autocomplete="username"
+                        required
+                    >
+                    <span class="form-erreur" id="err-pseudo"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Adresse mail</label>
+                    <input
+                        type="email"
+                        id="email"
+                        placeholder="email@exemple.com"
+                        autocomplete="email"
+                        required
+                    >
+                    <span class="form-erreur" id="err-email"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="motDePasse">Mot de passe</label>
+                    <input
+                        type="password"
+                        id="motDePasse"
+                        placeholder="8 caractères min, 1 majuscule, 1 caractère spécial"
+                        autocomplete="new-password"
+                        required
+                    >
+                    <span class="form-erreur" id="err-mdp"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="motDePasseConfirm">Confirmer le mot de passe</label>
+                    <input
+                        type="password"
+                        id="motDePasseConfirm"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        required
+                    >
+                    <span class="form-erreur" id="err-confirm"></span>
+                </div>
+
+                <button type="submit" class="btn-gradient btn-full" id="btn-submit">
+                    Créer mon compte
+                </button>
+            </form>
+
+            <div class="form-lien">
+                Déjà un compte ? <a href="login.html">Se connecter</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/theme.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/register.js"></script>
+</body>
+</html>

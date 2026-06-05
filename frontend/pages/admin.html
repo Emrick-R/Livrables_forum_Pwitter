@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pwitter - Dashboard Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="../index.html" class="navbar-logo">
+            <img src="../assets/Colombe en vol sur fond dégradé.png" alt="Logo Pwitter" class="logo-img">
+            <span class="logo-texte">Pwitter</span>
+        </a>
+        <div class="navbar-actions">
+            <button id="btn-theme" onclick="toggleTheme()" title="Changer le thème">🌙</button>
+            <div id="nav-auth" style="display:flex;gap:10px;align-items:center"></div>
+        </div>
+    </nav>
+
+    <div class="admin-layout">
+
+        <aside class="admin-sidebar">
+            <div class="admin-sidebar-card">
+                <h3>Administration</h3>
+                <button class="admin-nav-btn actif" onclick="afficherSection('topics', this)">
+                    📋 Topics
+                </button>
+                <button class="admin-nav-btn" onclick="afficherSection('utilisateurs', this)">
+                    👥 Utilisateurs
+                </button>
+            </div>
+        </aside>
+
+        <div class="admin-content">
+
+            <div class="admin-section visible" id="section-topics">
+                <div class="admin-section-titre">
+                    <span>Gestion des topics</span>
+                </div>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Auteur</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-topics">
+                            <tr>
+                                <td colspan="4" style="text-align:center;color:var(--texte-doux);padding:30px">
+                                    Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="admin-section" id="section-utilisateurs">
+                <div class="admin-section-titre">
+                    <span>Gestion des utilisateurs</span>
+                </div>
+                <div class="admin-table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Pseudo</th>
+                                <th>Email</th>
+                                <th>Rôle</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-utilisateurs">
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:var(--texte-doux);padding:30px">
+                                    Chargement...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="../js/theme.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/admin.js"></script>
+</body>
+</html>
