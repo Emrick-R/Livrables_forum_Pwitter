@@ -158,12 +158,12 @@ exports.deleteAdmTopicById = async (req, res) => {
         }
 
         // On supprime dans l'ordre pour respecter les contraintes de clés étrangères
-        // Du plus dépendant au moins dépendant : Likes → TopicLikes → Messages → Classifie → Topic
+        // Du plus dépendant au moins dépendant : messagelikes → topiclikes → Messages → Classifie → Topic
 
         // Les likes sur les messages du topic
         await db.query(
             `
-                DELETE l FROM Likes l
+                DELETE l FROM messagelikes l
                 JOIN messages m ON l.id_Messages = m.id_Messages
                 WHERE m.id_Topics = ?
             `,
@@ -173,7 +173,7 @@ exports.deleteAdmTopicById = async (req, res) => {
         // Les likes sur le topic lui-même
         await db.query(
             `
-                DELETE FROM TopicLikes
+                DELETE FROM topiclikes
                 WHERE id_Topics = ?
             `,
             [idTopic]
@@ -245,12 +245,12 @@ exports.deleteAdmMessageById = async (req, res) => {
         }
 
         // On supprime dans l'ordre pour respecter les contraintes de clés étrangères
-        // Du plus dépendant au moins dépendant : Likes → Message
+        // Du plus dépendant au moins dépendant : messagelikes → Message
 
         // Les likes associés au message
         await db.query(
             `
-                DELETE FROM Likes
+                DELETE FROM messagelikes
                 WHERE id_Messages = ?
             `,
             [idMessage]

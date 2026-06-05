@@ -106,13 +106,13 @@ exports.postLike = async (req, res) => {
 
         // On vérifie si l'utilisateur a déjà voté sur ce message
         // Exemple de retour si déjà voté :
-        // voteExistant = { id_Likes: 1, type: 'like' }
+        // voteExistant = { id_messagelikes: 1, type: 'like' }
         // Exemple de retour si pas encore voté :
         // voteExistant = undefined
         const [[voteExistant]] = await db.query(
             `
-                SELECT id_Likes, type
-                FROM Likes
+                SELECT id_messagelikes, type
+                FROM messagelikes
                 WHERE id_Messages = ? AND id_Users = ?
             `,
             [idMessage, idUtilisateur]
@@ -128,7 +128,7 @@ exports.postLike = async (req, res) => {
         if (voteExistant) {
             await db.query(
                 `
-                    UPDATE Likes
+                    UPDATE messagelikes
                     SET type = ?
                     WHERE id_Messages = ? AND id_Users = ?
                 `,
@@ -141,7 +141,7 @@ exports.postLike = async (req, res) => {
         // Sinon on insère un nouveau vote
         await db.query(
             `
-                INSERT INTO Likes (type, id_Messages, id_Users)
+                INSERT INTO messagelikes (type, id_Messages, id_Users)
                 VALUES (?, ?, ?)
             `,
             [type, idMessage, idUtilisateur]
@@ -189,13 +189,13 @@ exports.deleteLike = async (req, res) => {
 
         // On vérifie que l'utilisateur a bien un vote sur ce message
         // Exemple de retour si trouvé :
-        // vote = { id_Likes: 1, type: 'like' }
+        // vote = { id_messagelikes: 1, type: 'like' }
         // Exemple de retour si non trouvé :
         // vote = undefined
         const [[vote]] = await db.query(
             `
-                SELECT id_Likes, type
-                FROM Likes
+                SELECT id_messagelikes, type
+                FROM messagelikes
                 WHERE id_Messages = ? AND id_Users = ?
             `,
             [idMessage, idUtilisateur]
@@ -209,7 +209,7 @@ exports.deleteLike = async (req, res) => {
         // On supprime le vote
         await db.query(
             `
-                DELETE FROM Likes
+                DELETE FROM messagelikes
                 WHERE id_Messages = ? AND id_Users = ?
             `,
             [idMessage, idUtilisateur]
@@ -341,7 +341,7 @@ exports.deleteMessageById = async (req, res) => {
         // Sans ça MySQL refuserait la suppression à cause de la clé étrangère
         await db.query(
             `
-                DELETE FROM Likes
+                DELETE FROM messagelikes
                 WHERE id_Messages = ?
             `,
             [idMessage]

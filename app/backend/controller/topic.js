@@ -37,7 +37,7 @@ exports.getTopics = async (req, res) => {
                 FROM topics t
                          JOIN users u ON t.id_Users = u.id_Users
                          LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
-                         LEFT JOIN Tags tag ON c.id_Tags = tag.id_Tags
+                         LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
                 WHERE t.status != 'archivé'
                 GROUP BY t.id_Topics
                 ORDER BY t.created_at DESC
@@ -278,7 +278,7 @@ exports.getTopicMessages = async (req, res) => {
 
         // On récupère tous les messages du topic avec le username de l'auteur
         // et le score de popularité (nombre de likes - nombre de dislikes)
-        // LEFT JOIN Likes pour compter les votes sur chaque message
+        // LEFT JOIN messagelikes pour compter les votes sur chaque message
         // SUM(CASE ...) pour calculer le score : +1 par like, -1 par dislike
         // GROUP BY pour regrouper les lignes par message
         // Exemple de retour :
@@ -299,7 +299,7 @@ exports.getTopicMessages = async (req, res) => {
                        END) AS score
                 FROM messages m
                 JOIN users u ON m.id_Users = u.id_Users
-                LEFT JOIN Likes l ON m.id_Messages = l.id_Messages
+                LEFT JOIN messagelikes l ON m.id_Messages = l.id_Messages
                 WHERE m.id_Topics = ?
                 GROUP BY m.id_Messages
                 ORDER BY m.created_at DESC
@@ -439,7 +439,7 @@ exports.postTopicLikeDislike = async (req, res) => {
         const [[voteExistant]] = await db.query(
             `
                 SELECT id_TopicLikes, type
-                FROM TopicLikes
+                FROM topiclikes
                 WHERE id_Topics = ?
                   AND id_Users = ?
             `,
@@ -457,7 +457,7 @@ exports.postTopicLikeDislike = async (req, res) => {
         if (voteExistant) {
             await db.query(
                 `
-                    UPDATE TopicLikes
+                    UPDATE topiclikes
                     SET type = ?
                     WHERE id_Topics = ?
                       AND id_Users = ?
@@ -471,7 +471,7 @@ exports.postTopicLikeDislike = async (req, res) => {
         // Sinon on insère un nouveau vote
         await db.query(
             `
-                INSERT INTO TopicLikes (type, id_Topics, id_Users)
+                INSERT INTO topiclikes (type, id_Topics, id_Users)
                 VALUES (?, ?, ?)
             `,
             [type, idTopic, idUtilisateur]
@@ -525,7 +525,7 @@ exports.deleteTopicLikeDislike = async (req, res) => {
         const [[vote]] = await db.query(
             `
                 SELECT id_TopicLikes, type
-                FROM TopicLikes
+                FROM topiclikes
                 WHERE id_Topics = ? AND id_Users = ?
             `,
             [idTopic, idUtilisateur]
@@ -539,7 +539,7 @@ exports.deleteTopicLikeDislike = async (req, res) => {
         // On supprime le vote
         await db.query(
             `
-                DELETE FROM TopicLikes
+                DELETE FROM topiclikes
                 WHERE id_Topics = ? AND id_Users = ?
             `,
             [idTopic, idUtilisateur]
@@ -767,7 +767,7 @@ exports.deleteTopicById = async (req, res) => {
         // 1. Les likes sur les messages du topic
         await db.query(
             `
-                DELETE l FROM Likes l
+                DELETE l FROM messagelikes l
                 JOIN messages m ON l.id_Messages = m.id_Messages
                 WHERE m.id_Topics = ?
             `,
@@ -777,7 +777,7 @@ exports.deleteTopicById = async (req, res) => {
         // 2. Les likes sur le topic lui-même
         await db.query(
             `
-                DELETE FROM TopicLikes
+                DELETE FROM topiclikes
                 WHERE id_Topics = ?
             `,
             [idTopic]

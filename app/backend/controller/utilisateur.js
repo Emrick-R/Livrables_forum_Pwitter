@@ -109,7 +109,7 @@ exports.connecterClient = async (req, res) => {
         // On crée un jeton JWT signé avec les infos de l'utilisateur
         // Ce jeton sera stocké côté client pour identifier l'utilisateur sur les prochaines requêtes.
         const jeton = jwt.sign(
-            {id: utilisateur.id_Users, username: utilisateur.username}, // on embarque l'id et l'username
+            {id: utilisateur.id_Users, username: utilisateur.username, is_admin: utilisateur.is_admin}, // on embarque l'id, l'username et s'il est admin
             process.env.CLEJWT,  // on utilise la clé secrète du .env — jamais en dur dans le code
             {expiresIn: '24h'} // on expire le jeton après 24h pour la sécurité
         )
