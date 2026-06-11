@@ -1,0 +1,33 @@
+/*
+ * On définit ici toutes les routes liées aux messages.
+ * On fait le lien entre les URLs et les fonctions du controller message.
+ * On n'écrit pas de logique ici — on se contente de brancher les routes.
+ */
+
+// On importe Express pour pouvoir créer un router
+const express = require('express')
+const router = express.Router()
+
+// express.Router() — crée un mini Express dédié uniquement aux routes message
+// Permet de séparer les routes dans des fichiers distincts plutôt que tout mettre dans app.js
+const topic = require('../controller/message')
+const {verifierJWT} = require('../middleware/auth')
+
+// On branche POST /api/message → créer un message
+router.post('/message', verifierJWT, topic.postMessage)
+
+// On branche POST /api/message/:id/like → liker ou disliker un message
+router.post('/message/:id/like', verifierJWT, topic.postLike)
+
+// On branche DELETE /api/message/:id/like → annuler son like/dislike
+router.delete('/message/:id/like', verifierJWT, topic.deleteLike)
+
+// On branche PUT /api/message/:id → modifier le corps (propriétaire ou admin)
+router.put('/message/:id', verifierJWT, topic.putMessageById)
+
+// On branche DELETE /api/message/:id → supprimer un message
+router.delete('/message/:id', verifierJWT, topic.deleteMessageById)
+
+// On exporte le router avec toutes ses routes
+// app.js l'importe via require et le branche sur /api via app.use('/api', messageRouter)
+module.exports = router
