@@ -76,7 +76,11 @@ app.get('/mes-topics', (req, res) => res.sendFile(path.join(__dirname, 'frontend
 // Dashboard admin
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/admin.html')))
 
-// RENOMMER ET AJOUTER LES ROUTES ACTUELLES/FUTURS HTML ICI
+// Modification d'un topic
+app.get('/edit-topic.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/edit-topic.html')))
+
+// Création d'un topic
+app.get('/create-topic.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/create-topic.html')))
 
 // ===== ROUTES API =====
 // On importe et branche le router des utilisateurs sur /api

@@ -23,7 +23,7 @@ router.get('/topic/:id', verifierJWTOptionnel, topic.getTopicById)
 router.get('/topic/:id/tags', topic.getTopicTags)
 
 // On branche GET /api/topic/:id/message → retourne la liste des messages d'un topic spécifique
-router.get('/topic/:id/message', verifierJWTOptionnel, topic.getTopicMessages)
+router.get('/topic/:id/messages', verifierJWTOptionnel, topic.getTopicMessages)
 
 // On branche POST /api/topic → créer un topic
 router.post('/topic', verifierJWT, topic.postTopic)

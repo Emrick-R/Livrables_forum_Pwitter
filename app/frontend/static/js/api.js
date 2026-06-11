@@ -14,7 +14,9 @@ async function apiFetch(route, options = {}) {
     try {
         const res = await fetch(BASE_URL + route, config)
 
-        if (res.status === 401) {
+        // On redirige sur 401 uniquement si ce n'est PAS la connexion ou l'inscription
+        // 401 sur /connexion = mauvais mot de passe, pas un token expiré
+        if (res.status === 401 && route !== '/connexion' && route !== '/inscription') {
             deconnecter()
             return null
         }

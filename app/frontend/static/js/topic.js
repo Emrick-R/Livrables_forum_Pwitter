@@ -1,5 +1,13 @@
-const params   = new URLSearchParams(window.location.search)
-const topicId  = params.get('id')
+//  Ancien :
+// const params   = new URLSearchParams(window.location.search)
+// topicId  = params.get('id')
+// Nouveau :
+// On récupère l'id du topic depuis l'URL
+// L'URL ressemble à /topic/3
+// window.location.pathname retourne '/topic/3'
+// .split('/') donne ['', 'topic', '3']
+// .pop() prend le dernier élément → '3'
+const topicId = window.location.pathname.split('/').pop()
 
 if (!topicId) window.location.href = '/'
 

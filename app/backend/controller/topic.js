@@ -14,63 +14,113 @@ const db = require('../database/connexiondb.js')
 // Accessible publiquement — pas besoin de JWT
 exports.getTopics = async (req, res) => {
 
+    // On récupère les query params envoyés par le front
+    // Exemple d'URL : /api/topics?page=2&limite=10&tri=score&tag=1&recherche=film
+    // parseInt convertit la string en nombre, || fournit une valeur par défaut si absent
+    const page = parseInt(req.query.page) || 1
+    const limite = parseInt(req.query.limite) || 10
+    const tri = req.query.tri || 'date'
+    const tagId = req.query.tag || null
+    const recherche = req.query.recherche || ''
+
+    // offset = combien de lignes on saute avant de commencer à lire
+    // page 1 → offset 0 (on saute rien), page 2 → offset 10 (on saute les 10 premiers)
+    const offset = (page - 1) * limite
+
     try {
-        // On récupère tous les topics qui ne sont pas archivés
-        // avec le username de l'auteur et les tags associés
-        // LEFT JOIN pour inclure les topics sans tags
-        // GROUP BY pour regrouper les lignes par topic
-        // GROUP_CONCAT pour fusionner les tags en une seule chaîne
-        // Exemple de retour :
-        // topics = [
-        //     { id_Topics: 1, title: 'Topic Film', status: 'ouvert', created_at: '2026-01-01T10:00:00.000Z', username: 'user1', tags: 'Film,Meme' },
-        //     { id_Topics: 2, title: 'Topic Jeux-video', status: 'ouvert', created_at: '2026-01-01T11:00:00.000Z', username: 'user2', tags: 'Jeux-video' }
-        // ]
-        // Si aucun topic : topics = []
-        const [topics] = await db.query(
+        // On construit le WHERE dynamiquement selon les filtres actifs
+        // On part avec la condition de base : pas de topics archivés
+        let conditions = [`t.status != 'archivé'`]
+        let params = []
+
+        // Si le front envoie une recherche, on ajoute un filtre sur le titre
+        // LIKE '%film%' → cherche "film" n'importe où dans le titre
+        if (recherche) {
+            conditions.push(`t.title LIKE ?`)
+            params.push(`%${recherche}%`)
+        }
+
+        // Si le front envoie un tag, on filtre les topics qui ont ce tag
+        // On utilise une sous-requête sur Classifie pour trouver les topics liés à ce tag
+        if (tagId) {
+            conditions.push(`t.id_Topics IN (SELECT id_Topics FROM Classifie WHERE id_Tags = ?)`)
+            params.push(tagId)
+        }
+
+        // On assemble les conditions avec AND
+        // Résultat possible : "t.status != 'archivé' AND t.title LIKE '%film%' AND t.id_Topics IN (...)"
+        // Si aucun filtre actif : juste "t.status != 'archivé'"
+        const where = conditions.join(' AND ')
+
+        // On choisit l'ordre de tri selon ce que le front demande
+        // 'score' → les plus populaires en premier
+        // 'date' (par défaut) → les plus récents en premier
+        const orderBy = tri === 'score'
+            ? 'score DESC, t.created_at DESC'
+            : 't.created_at DESC'
+
+        // On compte le total de topics qui correspondent aux filtres
+        // Ce total est envoyé au front pour calculer le nombre de pages
+        // Exemple de retour : total = { count: 12 }
+        const [[total]] = await db.query(
             `
-                SELECT t.id_Topics,
-                       t.title,
-                       t.status,
-                       t.created_at,
-                       u.username,
-                       GROUP_CONCAT(tg.name) AS tags
+                SELECT COUNT(DISTINCT t.id_Topics) AS count
                 FROM topics t
-                         JOIN users u ON t.id_Users = u.id_Users
-                         LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
-                         LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
-                WHERE t.status != 'archivé'
-                GROUP BY t.id_Topics
-                ORDER BY t.created_at DESC
+                WHERE ${where}
             `,
-            []
+            params
         )
 
-        // GROUP_CONCAT retourne une chaîne "Film,Meme" — on la transforme en tableau ['Film', 'Meme']
-        // Si aucun tag, tags vaut null — on retourne un tableau vide []
+        // On récupère les topics de la page demandée
+        // LEFT JOIN topiclikes → pour calculer le score (likes - dislikes)
+        // LEFT JOIN messages → pour compter le nombre de réponses
+        // COALESCE(..., 0) → retourne 0 au lieu de null si aucun vote
+        // COUNT(DISTINCT ...) → compte les messages uniques, pas les doublons créés par les JOIN
+        // LIMIT 10 OFFSET 10 → prend 10 résultats en sautant les 10 premiers (page 2)
+        // Exemple de retour :
+        // topics = [
+        //     { id_Topics: 1, title: 'Topic Film', status: 'ouvert', username: 'user1', tags: 'Film,Meme', score: 1, nb_messages: 3 }
+        // ]
+        const [topics] = await db.query(
+            `
+                SELECT t.id_Topics, t.title, t.status, t.created_at,
+                       u.username,
+                       GROUP_CONCAT(DISTINCT tg.name) AS tags,
+                       COALESCE(SUM(CASE
+                           WHEN tl.type = 'like' THEN 1
+                           WHEN tl.type = 'dislike' THEN -1
+                           ELSE 0
+                       END), 0) AS score,
+                       COUNT(DISTINCT m.id_Messages) AS nb_messages
+                FROM topics t
+                JOIN users u ON t.id_Users = u.id_Users
+                LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
+                LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
+                LEFT JOIN topiclikes tl ON t.id_Topics = tl.id_Topics
+                LEFT JOIN messages m ON t.id_Topics = m.id_Topics
+                WHERE ${where}
+                GROUP BY t.id_Topics
+                ORDER BY ${orderBy}
+                LIMIT ? OFFSET ?
+            `,
+            [...params, limite, offset]
+        )
+
+        // GROUP_CONCAT retourne "Film,Meme" → on transforme en tableau ['Film', 'Meme']
         const topicsAvecTags = topics.map(topic => ({
             ...topic,
             tags: topic.tags ? topic.tags.split(',') : []
         }))
 
-        // On renvoie les topics trouvés
+        // On renvoie les topics ET le total
+        // Le front utilise le total pour afficher "Page 1 sur 3"
         // Exemple de réponse JSON :
-        // {
-        //     "topics": [
-        //         {
-        //             "id_Topics": 1,
-        //             "title": "Topic Film",
-        //             "status": "ouvert",
-        //             "created_at": "2026-01-01T10:00:00.000Z",
-        //             "username": "user1",
-        //             "tags": ["Film", "Meme"]
-        //         }
-        //     ]
-        // }
-        res.status(200).json({topics: topicsAvecTags})
+        // { "topics": [...], "total": 12 }
+        res.status(200).json({ topics: topicsAvecTags, total: total.count })
 
     } catch (erreur) {
         console.error(erreur)
-        res.status(500).json({message: 'Erreur serveur'})
+        res.status(500).json({ message: 'Erreur serveur' })
     }
 }
 
@@ -89,21 +139,27 @@ exports.getTopicById = async (req, res) => {
     const utilisateurConnecte = req.user || null
 
     try {
-        // On récupère le topic avec le username de l'auteur et ses tags
+        // On récupère le topic avec le username de l'auteur, ses tags et son score
+        // Le score est calculé via une sous-requête indépendante sur topiclikes :
+        //   → La sous-requête parcourt topiclikes pour ce topic uniquement
+        //   → CASE transforme chaque vote : 'like' → +1, 'dislike' → -1
+        //   → SUM additionne tous les votes pour obtenir le score total
+        //   → COALESCE remplace null par 0 si le topic n'a aucun vote
+        //   → Le tout est isolé des autres JOIN, ce qui évite de compter les votes en double
         // Exemple de retour si trouvé :
         // topic = { id_Topics: 1, title: 'Topic Film', body: '...', status: 'ouvert',
         //           created_at: '2026-01-01T10:00:00.000Z', id_Users: 2,
-        //           username: 'user1', tags: 'Film,Meme' }
+        //           username: 'user1', tags: 'Film,Meme', score: 1 }
         const [[topic]] = await db.query(
             `
-                SELECT t.id_Topics,
-                       t.title,
-                       t.body,
-                       t.status,
-                       t.created_at,
-                       t.id_Users,
-                       u.username,
-                       GROUP_CONCAT(tg.name) AS tags
+                SELECT t.id_Topics, t.title, t.body, t.status, t.created_at,
+                       t.id_Users, u.username,
+                       GROUP_CONCAT(DISTINCT tg.name) AS tags,
+                       (SELECT COALESCE(SUM(CASE
+                                                WHEN tl.type = 'like' THEN 1
+                                                WHEN tl.type = 'dislike' THEN -1
+                                                ELSE 0
+                           END), 0) FROM topiclikes tl WHERE tl.id_Topics = t.id_Topics) AS score
                 FROM topics t
                          JOIN users u ON t.id_Users = u.id_Users
                          LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
@@ -276,52 +332,71 @@ exports.getTopicMessages = async (req, res) => {
             return res.status(403).json({ message: 'Accès interdit' })
         }
 
-        // On récupère tous les messages du topic avec le username de l'auteur
-        // et le score de popularité (nombre de likes - nombre de dislikes)
-        // LEFT JOIN messagelikes pour compter les votes sur chaque message
-        // SUM(CASE ...) pour calculer le score : +1 par like, -1 par dislike
-        // GROUP BY pour regrouper les lignes par message
+        // On récupère les query params envoyés par le front
+        // Exemple d'URL : /api/topic/1/messages?page=2&limite=10&tri=score
+        // parseInt convertit la string en nombre, || fournit une valeur par défaut si absent
+        const pageMsgs = parseInt(req.query.page) || 1
+        const limiteMsgs = parseInt(req.query.limite) || 10
+        const triMsgs = req.query.tri || 'date'
+
+        // offset = combien de messages on saute avant de commencer à lire
+        // page 1 → offset 0 (on saute rien), page 2 → offset 10 (on saute les 10 premiers)
+        const offsetMsgs = (pageMsgs - 1) * limiteMsgs
+
+        // On compte le total de messages dans ce topic
+        // Ce total est envoyé au front pour calculer le nombre de pages
+        // Exemple de retour : totalMsgs = { count: 27 }
+        const [[totalMsgs]] = await db.query(
+            `
+                SELECT COUNT(*) AS count
+                FROM messages
+                WHERE id_Topics = ?
+            `,
+            [idTopic]
+        )
+
+        // On choisit l'ordre de tri selon ce que le front demande
+        // 'score' → les messages les plus likés en premier
+        // 'date' (par défaut) → les messages les plus récents en premier
+        const orderByMsgs = triMsgs === 'score'
+            ? 'score DESC, m.created_at DESC'
+            : 'm.created_at DESC'
+
+        // On récupère les messages de la page demandée
+        // LEFT JOIN messagelikes → pour calculer le score (likes - dislikes)
+        // COALESCE(..., 0) → retourne 0 au lieu de null si aucun vote sur le message
+        // LIMIT 10 OFFSET 10 → prend 10 résultats en sautant les 10 premiers (page 2)
         // Exemple de retour :
         // messages = [
-        //     { id_Messages: 1, body: 'Super film !', created_at: '2026-01-02T10:00:00.000Z', username: 'user1', id_Users: 3, score: 1 },
-        //     { id_Messages: 2, body: 'Pas convaincu', created_at: '2026-01-02T11:00:00.000Z', username: 'user2', id_Users: 4, score: -1 },
-        //     { id_Messages: 3, body: 'Vraiment nul', created_at: '2026-01-02T12:00:00.000Z', username: 'admin', id_Users: 2, score: 0 }
+        //     { id_Messages: 1, body: 'Super film !', created_at: '...', username: 'user1', id_Users: 3, score: 1 },
+        //     { id_Messages: 2, body: 'Pas convaincu', created_at: '...', username: 'user2', id_Users: 4, score: -1 }
         // ]
         // Si aucun message : messages = []
         const [messages] = await db.query(
             `
                 SELECT m.id_Messages, m.body, m.created_at,
                        u.username, u.id_Users,
-                       SUM(CASE
+                       COALESCE(SUM(CASE
                            WHEN l.type = 'like'    THEN 1
                            WHEN l.type = 'dislike' THEN -1
                            ELSE 0
-                       END) AS score
+                       END), 0) AS score
                 FROM messages m
                 JOIN users u ON m.id_Users = u.id_Users
                 LEFT JOIN messagelikes l ON m.id_Messages = l.id_Messages
                 WHERE m.id_Topics = ?
                 GROUP BY m.id_Messages
-                ORDER BY m.created_at DESC
+                ORDER BY ${orderByMsgs}
+                LIMIT ? OFFSET ?
             `,
-            [idTopic]
+            [idTopic, limiteMsgs, offsetMsgs]
         )
 
-        // On renvoie les messages trouvés
+        // On renvoie les messages ET le total
+        // Le front utilise le total pour afficher "27 réponses" et calculer le nombre de pages
         // Exemple de réponse JSON :
-        // {
-        //     "messages": [
-        //         {
-        //             "id_Messages": 1,
-        //             "body": "Super film !",
-        //             "created_at": "2026-01-02T10:00:00.000Z",
-        //             "username": "user1",
-        //             "id_Users": 3,
-        //             "score": 1
-        //         }
-        //     ]
-        // }
-        res.status(200).json({ messages })
+        // { "messages": [...], "total": 27 }
+        res.status(200).json({ messages, total: totalMsgs.count })
 
     } catch (erreur) {
         console.error(erreur)
