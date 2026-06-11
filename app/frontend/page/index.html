@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pwitter - Accueil</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/" class="navbar-logo">
+            <img src="/assets/Colombe en vol sur fond dégradé.png" alt="Logo Pwitter" class="logo-img">
+            <span class="logo-texte">Pwitter</span>
+        </a>
+
+        <div class="navbar-search">
+            <input type="text" id="search-input" placeholder="Rechercher un topic...">
+            <button onclick="rechercherTopics()">Chercher</button>
+        </div>
+
+        <div class="navbar-actions">
+            <button id="btn-theme" onclick="toggleTheme()" title="Changer le thème">🌙</button>
+            <div id="nav-auth" style="display:flex;gap:10px;align-items:center"></div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <h3>Catégories</h3>
+                <div id="liste-tags" class="tag-liste">
+                    <p class="message-vide">Chargement...</p>
+                </div>
+            </div>
+        </aside>
+
+        <section class="topics-zone">
+            <div class="topics-header">
+                <h2>Topics récents</h2>
+                <a href="/create-topic.html" class="btn-gradient" id="btn-nouveau-topic" style="display:none">
+                    + Nouveau topic
+                </a>
+            </div>
+
+            <div class="tri-options">
+                <button class="btn-tri actif" onclick="changerTri('date', this)">Récents</button>
+                <button class="btn-tri" onclick="changerTri('score', this)">Populaires</button>
+            </div>
+
+            <div id="topics-container">
+                <div class="message-vide">Chargement des topics...</div>
+            </div>
+
+            <div class="pagination" id="pagination"></div>
+        </section>
+
+    </div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/index.js"></script>
+</body>
+</html>

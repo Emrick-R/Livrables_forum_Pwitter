@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pwitter - Modifier le topic</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .tags-selection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .tag-choix {
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--bordure);
+            background: transparent;
+            color: var(--texte-doux);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tag-choix.selectionne {
+            background: rgba(96, 200, 240, 0.15);
+            color: var(--bleu);
+            border-color: rgba(96, 200, 240, 0.4);
+            font-weight: 600;
+        }
+
+        .tag-choix:hover {
+            background: var(--bg-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="/Livrables_forum_Pwitter/app/frontend/static" class="navbar-logo">
+            <img src="/assets/Colombe%20en%20vol%20sur%20fond%20dégradé.png" alt="Logo Pwitter" class="logo-img">
+            <span class="logo-texte">Pwitter</span>
+        </a>
+        <div class="navbar-actions">
+            <button id="btn-theme" onclick="toggleTheme()" title="Changer le thème">🌙</button>
+            <div id="nav-auth" style="display:flex;gap:10px;align-items:center"></div>
+        </div>
+    </nav>
+
+    <div class="edit-topic-page">
+
+        <a href="#" id="lien-retour" style="font-size:0.85rem;color:var(--texte-doux);display:inline-block;margin-bottom:16px">
+            ← Retour au topic
+        </a>
+
+        <div class="form-card" style="max-width:100%">
+            <h1>Modifier le topic</h1>
+            <p class="sous-titre" id="sous-titre-edit">Chargement...</p>
+
+            <div class="alerte erreur" id="alerte-erreur"></div>
+
+            <form id="form-edit" onsubmit="sauvegarderTopic(event)">
+
+                <div class="form-group">
+                    <label for="titre">Titre</label>
+                    <input type="text" id="titre" maxlength="150" required>
+                    <span class="form-erreur" id="err-titre"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="corps">Contenu</label>
+                    <textarea id="corps" rows="8" required></textarea>
+                    <span class="form-erreur" id="err-corps"></span>
+                </div>
+
+                <div class="form-group">
+                    <label>Tags</label>
+                    <div class="tags-selection" id="tags-selection">
+                        <p style="color:var(--texte-doux);font-size:0.88rem">Chargement...</p>
+                    </div>
+                </div>
+
+                <div style="display:flex;gap:10px;margin-top:4px">
+                    <button type="submit" class="btn-gradient" id="btn-submit">Sauvegarder</button>
+                    <a id="btn-annuler" href="#" class="btn-outline">Annuler</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/theme.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/edit-topic.js"></script>
+</body>
+</html>

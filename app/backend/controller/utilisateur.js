@@ -72,7 +72,7 @@ exports.inscrireClient = async (req, res) => {
 exports.connecterClient = async (req, res) => {
 
     // On récupère les données envoyées par le formulaire de connexion
-    const mail = req.body.email
+    const identifiant = req.body.email
     const motDePasse = req.body.mdp
 
     try {
@@ -83,9 +83,9 @@ exports.connecterClient = async (req, res) => {
         const [resultats] = await db.query(
             `
             SELECT * FROM Users
-            WHERE email = ?
+            WHERE email = ? OR username = ? 
             `,
-            [mail]
+            [identifiant, identifiant]
         )
 
         // Si on ne trouve personne, on renvoie une erreur générique

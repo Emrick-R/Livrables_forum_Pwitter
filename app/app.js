@@ -51,14 +51,36 @@ app.use(express.json())
 
 // On sert tous les fichiers statiques (CSS, JS, images) depuis frontend/static
 // Express les rend accessibles via leur chemin depuis la racine ex: /css/main.css
-// Exemple: app.use(express.static(path.join(__dirname, 'frontend/static')))
+app.use(express.static(path.join(__dirname, 'frontend/static')))
 
 // ===== ROUTES HTML =====
 // On écoute les GET sur chaque URL et on renvoie le fichier HTML correspondant
 // path.join gère les différences de séparateurs entre Windows (\) et Mac/Linux (/)
 
-// On sert la page d'accueil
-// Exemple: app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'frontend/views/index.html')))
+// On sert :
+// Page d'accueil — listing des topics
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/index.html')))
+
+// Connexion
+app.get('/connexion', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/connexion.html')))
+
+// Inscription
+app.get('/inscription', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/inscription.html')))
+
+// Détail d'un topic + ses messages
+app.get('/topic/:id', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/topic.html')))
+
+// Mes topics (connecté)
+app.get('/mes-topics', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/mes-topics.html')))
+
+// Dashboard admin
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/admin.html')))
+
+// Modification d'un topic
+app.get('/edit-topic.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/edit-topic.html')))
+
+// Création d'un topic
+app.get('/create-topic.html', (req, res) => res.sendFile(path.join(__dirname, 'frontend/page/create-topic.html')))
 
 // ===== ROUTES API =====
 // On importe et branche le router des utilisateurs sur /api
@@ -82,7 +104,7 @@ const tagRouter = require('./backend/router/tag')
 app.use('/api', tagRouter)
 
 // On importe et branche le router des admins sur /api
-// Toutes les routes d'adminRouter' seront préfixées par /api
+// Toutes les routes d'adminRouter seront préfixées par /api
 const adminRouter = require('./backend/router/admin')
 app.use('/api', adminRouter)
 
@@ -90,7 +112,7 @@ app.use('/api', adminRouter)
 // On place ce gestionnaire en dernier — Express parcourt toutes les routes dans l'ordre
 // Si aucune route ne correspond à l'URL demandée, on renvoie la page d'erreur
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, 'frontend/pages/erreur.html'))
+    res.sendFile(path.join(__dirname, 'frontend/page/erreur.html'))
 })
 
 // ===== LANCEMENT DU SERVEUR =====
