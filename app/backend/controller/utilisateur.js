@@ -22,17 +22,67 @@ exports.inscrireClient = async (req, res) => {
     const mail = req.body.email
     const motDePasse = req.body.password_hash
 
+    // On vérifie que les champs obligatoires sont présents
+    if (!username || !mail || !motDePasse) {
+        return res.status(400).json({message: 'Tous les champs sont obligatoires'})
+    }
+
+    // On vérifie que le username ne contient que des lettres et chiffres
+    // ! → on inverse le résultat : si le test échoue, on entre dans le if
+    // / → début de l'expression régulière
+    // ^ → début de la chaîne (le test commence depuis le premier caractère)
+    // [a-zA-Z0-9] → caractères autorisés : lettres minuscules, majuscules et chiffres
+    // + → il faut au moins un caractère
+    // $ → fin de la chaîne (le test va jusqu'au dernier caractère)
+    // / → fin de l'expression régulière
+    // .test(username) → retourne true si le username respecte la règle, false sinon
+    // Exemples :
+    // "user1"    → true  → !true  = false → on n'entre pas dans le if → OK
+    // "user_1"   → false → !false = true  → on entre dans le if → REFUSÉ
+    // "user 1"   → false → !false = true  → on entre dans le if → REFUSÉ
+    if (!/^[a-zA-Z0-9]+$/.test(username)) {
+        return res.status(400).json({ message: 'Le pseudo ne doit contenir que des lettres et des chiffres' })
+    }
+
+    // On vérifie la puissance du mot de passe
+    // Minimum 8 caractères, une majuscule, un caractère spécial
+    if (motDePasse.length < 8) {
+        return res.status(400).json({message: 'Le mot de passe doit faire au moins 8 caractères'})
+    }
+    // On vérifie que le mot de passe contient au moins une majuscule
+    // [A-Z] → cherche n'importe quelle lettre majuscule dans la chaîne
+    // Pas de ^ ni $ → on ne vérifie pas toute la chaîne, juste la présence d'au moins une majuscule
+    // .test() → retourne true si au moins une majuscule est trouvée, false sinon
+    // ! → inverse : si aucune majuscule trouvée → on entre dans le if → REFUSÉ
+    // Exemples :
+    // "test1234!" → false → !false = true  → REFUSÉ (pas de majuscule)
+    // "Test1234!" → true  → !true  = false → OK
+    if (!/[A-Z]/.test(motDePasse)) {
+        return res.status(400).json({ message: 'Le mot de passe doit contenir au moins une majuscule' })
+    }
+
+    // On vérifie que le mot de passe contient au moins un caractère spécial
+    // [^a-zA-Z0-9] → le ^ à l'intérieur des crochets signifie "tout SAUF"
+    // Donc : tout sauf les lettres minuscules, majuscules et chiffres = un caractère spécial
+    // .test() → retourne true si au moins un caractère spécial est trouvé, false sinon
+    // ! → inverse : si aucun caractère spécial trouvé → on entre dans le if → REFUSÉ
+    // Exemples :
+    // "Test1234"  → false → !false = true  → REFUSÉ (pas de caractère spécial)
+    // "Test1234!" → true  → !true  = false → OK (le ! est un caractère spécial)
+    if (!/[^a-zA-Z0-9]/.test(motDePasse)) {
+        return res.status(400).json({ message: 'Le mot de passe doit contenir au moins un caractère spécial' })
+    }
+
     try {
         // On vérifie si un compte existe déjà avec cet email
         // pour éviter les doublons en base de données
         // On utilise la destructuration ici pour ne prendre uniquement le résultat intéressant et non les métadonnées renvoyées par la db
-        const [existant] = await db.query(
-            `
-            SELECT id_Users
-            FROM users
-            WHERE email = ? OR username = ?
-            `,
-            [mail, username] //mail = 1er ? et username = 2e ?
+        const [existant] = await db.query(`
+                    SELECT id_Users
+                    FROM users
+                    WHERE email = ?
+                       OR username = ?
+            `, [mail, username] //mail = 1er ? et username = 2e ?
         )
 
         // Si on trouve un résultat sur existant, on refuse l'inscription avec un code 409 (conflit)
@@ -46,11 +96,10 @@ exports.inscrireClient = async (req, res) => {
 
         // On prépare la requête d'insertion
         // On utilise des ? pour éviter les injections SQL
-        const sql =
-            `
+        const sql = `
             INSERT INTO users (username, email, password_hash)
             VALUES (?, ?, ?)
-            `
+        `
 
         // On envoie la requête à la base de données avec les valeurs dans le bon ordre
         await db.query(sql, [username, mail, motDePasseHache])
@@ -80,13 +129,12 @@ exports.connecterClient = async (req, res) => {
         // Récupération directe des résultats de la requête (les données) via la déstructuration [existant].
         // Cela permet d'ignorer le deuxième élément renvoyé par db.query (les métadonnées techniques).
         // Retourne : resultats = [ { id_Users: 2, username: 'user1', email: '...' } ]
-        const [resultats] = await db.query(
-            `
-            SELECT * FROM Users
-            WHERE email = ? OR username = ? 
-            `,
-            [identifiant, identifiant]
-        )
+        const [resultats] = await db.query(`
+            SELECT *
+            FROM Users
+            WHERE email = ?
+               OR username = ?
+        `, [identifiant, identifiant])
 
         // Si on ne trouve personne, on renvoie une erreur générique
         // On ne précise pas si c'est l'email ou le mot de passe qui est faux pour ne pas donner d'informations à un attaquant.
@@ -108,17 +156,18 @@ exports.connecterClient = async (req, res) => {
 
         // On crée un jeton JWT signé avec les infos de l'utilisateur
         // Ce jeton sera stocké côté client pour identifier l'utilisateur sur les prochaines requêtes.
-        const jeton = jwt.sign(
-            {id: utilisateur.id_Users, username: utilisateur.username, is_admin: utilisateur.is_admin}, // on embarque l'id, l'username et s'il est admin
+        const jeton = jwt.sign({
+                id: utilisateur.id_Users,
+                username: utilisateur.username,
+                is_admin: utilisateur.is_admin
+            }, // on embarque l'id, l'username et s'il est admin
             process.env.CLEJWT,  // on utilise la clé secrète du .env — jamais en dur dans le code
             {expiresIn: '24h'} // on expire le jeton après 24h pour la sécurité
         )
 
         // On renvoie le jeton et le prénom pour personnaliser l'interface côté front
         res.status(200).json({
-            message: 'Connexion réussie !',
-            username: utilisateur.username,
-            token: jeton
+            message: 'Connexion réussie !', username: utilisateur.username, token: jeton
         })
 
     } catch (erreur) {
@@ -148,27 +197,26 @@ exports.getMesTopics = async (req, res) => {
         //     { id_Topics: 2, title: 'Topic Jeux-video', status: 'ouvert', created_at: '2026-01-01T11:00:00.000Z', tags: 'Jeux-video' }
         // ]
         // Si aucun topic : topics = []
-        const [topics] = await db.query(
-            `
-                SELECT t.id_Topics, t.title, t.status, t.created_at,
-                       GROUP_CONCAT(tg.name) AS tags
-                FROM topics t
-                LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
-                LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
-                WHERE t.id_Users = ?
-                GROUP BY t.id_Topics
-                ORDER BY t.created_at DESC
-            `,
-            [idUtilisateur]
-        )
+        const [topics] = await db.query(`
+            SELECT t.id_Topics,
+                   t.title,
+                   t.status,
+                   t.created_at,
+                   GROUP_CONCAT(tg.name) AS tags
+            FROM topics t
+                     LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
+                     LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
+            WHERE t.id_Users = ?
+            GROUP BY t.id_Topics
+            ORDER BY t.created_at DESC
+        `, [idUtilisateur])
 
         // GROUP_CONCAT retourne une chaîne "Film,Meme" — on la transforme en tableau ['Film', 'Meme']
         // Si aucun tag, tags vaut null — on retourne un tableau vide []
         const topicsAvecTags = topics.map(topic => ({
             ...topic,               // on copie toutes les propriétés existantes dans un nouvel objet
             tags: topic.tags        // on écrase uniquement la propriété tags
-                ? topic.tags.split(',')
-                : []
+                ? topic.tags.split(',') : []
         }))
 
         // On renvoie les topics trouvés avec leurs tags
@@ -184,11 +232,11 @@ exports.getMesTopics = async (req, res) => {
         //         }
         //     ]
         // }
-        res.status(200).json({ topics: topicsAvecTags })
+        res.status(200).json({topics: topicsAvecTags})
 
     } catch (erreur) {
         console.error(erreur)
-        res.status(500).json({ message: 'Erreur serveur' })
+        res.status(500).json({message: 'Erreur serveur'})
     }
 }
 
@@ -205,28 +253,25 @@ exports.getUtilisateurById = async (req, res) => {
         // sans passer par result[0]
         // Exemple de retour si trouvé :
         // utilisateur = { id_Users: 2, username: 'user1', email: 'u1@mail.com' }
-        const [[utilisateur]] = await db.query(
-            `
-                SELECT id_Users, username, email
-                FROM users
-                WHERE id_Users = ?
-            `,
-            [idUtilisateur]
-        )
+        const [[utilisateur]] = await db.query(`
+            SELECT id_Users, username, email
+            FROM users
+            WHERE id_Users = ?
+        `, [idUtilisateur])
 
         // Si aucun utilisateur trouvé, on renvoie une erreur 404
         if (!utilisateur) {
-            return res.status(404).json({ message: 'Utilisateur introuvable' })
+            return res.status(404).json({message: 'Utilisateur introuvable'})
         }
 
         // On renvoie l'utilisateur trouvé
         // Exemple de réponse JSON :
         // { "utilisateur": { "id_Users": 2, "username": "user1", "email": "u1@mail.com" } }
-        res.status(200).json({ utilisateur })
+        res.status(200).json({utilisateur})
 
     } catch (erreur) {
         console.error(erreur)
-        res.status(500).json({ message: 'Erreur serveur' })
+        res.status(500).json({message: 'Erreur serveur'})
     }
 }
 
@@ -242,18 +287,15 @@ exports.getUtilisateurTopics = async (req, res) => {
         // On vérifie d'abord que l'utilisateur existe
         // Exemple de retour si trouvé :
         // utilisateur = { id_Users: 2, username: 'user1' }
-        const [[utilisateur]] = await db.query(
-            `
-                SELECT id_Users, username
-                FROM users
-                WHERE id_Users = ?
-            `,
-            [idUtilisateur]
-        )
+        const [[utilisateur]] = await db.query(`
+            SELECT id_Users, username
+            FROM users
+            WHERE id_Users = ?
+        `, [idUtilisateur])
 
         // Si l'utilisateur n'existe pas on renvoie une erreur 404
         if (!utilisateur) {
-            return res.status(404).json({ message: 'Utilisateur introuvable' })
+            return res.status(404).json({message: 'Utilisateur introuvable'})
         }
 
         // On récupère tous les topics de cet utilisateur avec leurs tags associés
@@ -267,27 +309,26 @@ exports.getUtilisateurTopics = async (req, res) => {
         //     { id_Topics: 2, title: 'Topic Jeux-video', status: 'ouvert', created_at: '2026-01-01T11:00:00.000Z', tags: 'Jeux-video' }
         // ]
         // Si aucun topic : topics = []
-        const [topics] = await db.query(
-            `
-                SELECT t.id_Topics, t.title, t.status, t.created_at,
-                       GROUP_CONCAT(tg.name) AS tags
-                FROM topics t
-                         LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
-                         LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
-                WHERE t.id_Users = ?
-                GROUP BY t.id_Topics
-                ORDER BY t.created_at DESC
-            `,
-            [idUtilisateur]
-        )
+        const [topics] = await db.query(`
+            SELECT t.id_Topics,
+                   t.title,
+                   t.status,
+                   t.created_at,
+                   GROUP_CONCAT(tg.name) AS tags
+            FROM topics t
+                     LEFT JOIN Classifie c ON t.id_Topics = c.id_Topics
+                     LEFT JOIN Tags tg ON c.id_Tags = tg.id_Tags
+            WHERE t.id_Users = ?
+            GROUP BY t.id_Topics
+            ORDER BY t.created_at DESC
+        `, [idUtilisateur])
 
         // GROUP_CONCAT retourne une chaîne "Film,Meme" — on la transforme en tableau ['Film', 'Meme']
         // Si aucun tag, tags vaut null — on retourne un tableau vide []
         const topicsAvecTags = topics.map(topic => ({
             ...topic,               // on copie toutes les propriétés existantes dans un nouvel objet
             tags: topic.tags        // on écrase uniquement la propriété tags
-                ? topic.tags.split(',')
-                : []
+                ? topic.tags.split(',') : []
         }))
 
         // On renvoie l'utilisateur et ses topics avec leurs tags
@@ -304,11 +345,11 @@ exports.getUtilisateurTopics = async (req, res) => {
         //         }
         //     ]
         // }
-        res.status(200).json({ utilisateur, topics: topicsAvecTags })
+        res.status(200).json({utilisateur, topics: topicsAvecTags})
 
     } catch (erreur) {
         console.error(erreur)
-        res.status(500).json({ message: 'Erreur serveur' })
+        res.status(500).json({message: 'Erreur serveur'})
     }
 }
 
